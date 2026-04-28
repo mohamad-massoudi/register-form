@@ -2,19 +2,50 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
+import { useStudents } from "../store/studentstore"
 
 export default function RegisterPage() {
 
   const [step, setStep] = useState(1)
   const [error, setError] = useState("")
 
-  const nextStep = () => {
-    setStep(step + 1)
+  const { addStudent } = useStudents()
+
+
+  const [formData, setFormData] = useState({
+    fullName: "",
+    nationalId: "",
+    grade: "",
+    lastSchool: "",
+    homeAddress: "",
+    studentPhone: "",
+    gender: "",
+    motherWork: "",
+    motherPhone: "",
+    fatherWork: "",
+    fatherPhone: "",
+  })
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
   }
 
-  const prevStep = () => {
-    setStep(step - 1)
+  const handleSubmit = () => {
+
+    const payload = { ...formData }
+
+    addStudent(payload)
+
+    console.log("Saved:", payload)
+
+    alert("ثبت شد ✅")
   }
+
+  const nextStep = () => setStep(step + 1)
+  const prevStep = () => setStep(step - 1)
 
   const inputStyle = `
   w-full px-4 py-3 rounded-xl
@@ -25,13 +56,12 @@ export default function RegisterPage() {
   transition-all duration-300
   focus:outline-none
   focus:ring-2 focus:ring-indigo-500
-  focus:border-indigo-500
   hover:shadow-xl
   hover:border-indigo-400
   `
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-indigo-200 via-blue-200 to-purple-200 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+    <div className="min-h-screen flex items-center justify-center p-6 bg-linear-to-br from-indigo-200 via-blue-200 to-purple-200 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
 
       <motion.div
         initial={{ opacity: 0, y: 40 }}
@@ -45,12 +75,10 @@ export default function RegisterPage() {
 
         {/* progress */}
         <div className="flex gap-3 mb-10">
-          {[1,2,3].map((s)=>(
+          {[1, 2, 3].map(s => (
             <div
               key={s}
-              className={`h-2 flex-1 rounded-full transition ${
-                step >= s ? "bg-indigo-500" : "bg-gray-300"
-              }`}
+              className={`h-2 flex-1 rounded-full ${step >= s ? "bg-indigo-500" : "bg-gray-300"}`}
             />
           ))}
         </div>
@@ -58,122 +86,63 @@ export default function RegisterPage() {
         {/* STEP 1 */}
         {step === 1 && (
           <motion.div
-            initial={{ x: 60, opacity:0 }}
-            animate={{ x:0, opacity:1 }}
+            initial={{ x: 60, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
             className="grid md:grid-cols-2 gap-6"
           >
+            <input name="fullName" placeholder="نام و نام خانوادگی" className={inputStyle} onChange={handleChange} />
+            <input name="nationalId" placeholder="کد ملی" className={inputStyle} onChange={handleChange} />
+            <input name="grade" placeholder="پایه تحصیلی" className={inputStyle} onChange={handleChange} />
+            <input name="lastSchool" placeholder="مدرسه سال قبل" className={inputStyle} onChange={handleChange} />
 
-            <div>
-              <label className="font-semibold mb-2 block">نام و نام خانوادگی</label>
-              <input className={inputStyle} />
-            </div>
-
-            <div>
-              <label className="font-semibold mb-2 block">کد ملی</label>
-              <input className={inputStyle} />
-            </div>
-
-            <div>
-              <label className="font-semibold mb-2 block">پایه تحصیلی</label>
-              <input className={inputStyle} />
-            </div>
-
-            <div>
-              <label className="font-semibold mb-2 block">مدرسه سال قبل</label>
-              <input className={inputStyle} />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="font-semibold mb-2 block">محل سکونت</label>
-              <textarea className={inputStyle + " min-h-[100px]"} />
-            </div>
-
+            <textarea
+              name="homeAddress"
+              placeholder="محل سکونت"
+              className={inputStyle + " md:col-span-2 min-h-25"}
+              onChange={handleChange}
+            />
           </motion.div>
         )}
 
         {/* STEP 2 */}
         {step === 2 && (
           <motion.div
-            initial={{ x:60, opacity:0 }}
-            animate={{ x:0, opacity:1 }}
+            initial={{ x: 60, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
             className="grid md:grid-cols-2 gap-6"
           >
+            <input name="studentPhone" placeholder="شماره شاد" className={inputStyle} onChange={handleChange} />
 
-            <div>
-              <label className="font-semibold mb-2 block">شماره شاد دانش‌آموز</label>
-              <input className={inputStyle}/>
+            <div className="flex gap-8 items-center">
+              <label>
+                <input type="radio" name="gender" value="male" onChange={handleChange} /> پسر
+              </label>
+
+              <label>
+                <input type="radio" name="gender" value="female" onChange={handleChange} /> دختر
+              </label>
             </div>
-
-            <div>
-              <label className="font-semibold mb-2 block">جنسیت</label>
-              <div className="flex gap-8 mt-3">
-
-                <label className="flex items-center gap-2 cursor-pointer hover:text-indigo-600">
-                  <input type="radio" name="gender"/>
-                  پسر
-                </label>
-
-                <label className="flex items-center gap-2 cursor-pointer hover:text-indigo-600">
-                  <input type="radio" name="gender"/>
-                  دختر
-                </label>
-
-              </div>
-            </div>
-
           </motion.div>
         )}
 
         {/* STEP 3 */}
         {step === 3 && (
           <motion.div
-            initial={{ x:60, opacity:0 }}
-            animate={{ x:0, opacity:1 }}
+            initial={{ x: 60, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
             className="grid md:grid-cols-2 gap-6"
           >
-
-            <div>
-              <label className="font-semibold mb-2 block">محل کار مادر</label>
-              <input className={inputStyle}/>
-            </div>
-
-            <div>
-              <label className="font-semibold mb-2 block">شماره مادر</label>
-              <input className={inputStyle}/>
-            </div>
-
-            <div>
-              <label className="font-semibold mb-2 block">محل کار پدر</label>
-              <input className={inputStyle}/>
-            </div>
-
-            <div>
-              <label className="font-semibold mb-2 block">شماره پدر</label>
-              <input className={inputStyle}/>
-            </div>
-
+            <input name="motherWork" placeholder="محل کار مادر" className={inputStyle} onChange={handleChange} />
+            <input name="motherPhone" placeholder="شماره مادر" className={inputStyle} onChange={handleChange} />
+            <input name="fatherWork" placeholder="محل کار پدر" className={inputStyle} onChange={handleChange} />
+            <input name="fatherPhone" placeholder="شماره پدر" className={inputStyle} onChange={handleChange} />
           </motion.div>
-        )}
-
-        {/* error */}
-        {error && (
-          <motion.p
-            initial={{x:-10}}
-            animate={{x:[-10,10,-10]}}
-            className="text-red-500 mt-4"
-          >
-            {error}
-          </motion.p>
         )}
 
         {/* buttons */}
         <div className="flex justify-between mt-10">
-
           {step > 1 && (
-            <button
-              onClick={prevStep}
-              className="px-6 py-3 rounded-xl bg-red-700 hover:bg-red-800 transition"
-            >
+            <button onClick={prevStep} className="px-6 py-3 rounded-xl bg-red-700 text-white">
               قبلی
             </button>
           )}
@@ -181,10 +150,7 @@ export default function RegisterPage() {
           {step < 3 && (
             <button
               onClick={nextStep}
-              className="ml-auto px-8 py-3 rounded-xl text-white
-              bg-gradient-to-r from-indigo-600 to-blue-500
-              hover:from-indigo-700 hover:to-blue-600
-              shadow-lg hover:shadow-xl transition"
+              className="ml-auto px-8 py-3 rounded-xl text-white bg-indigo-600"
             >
               مرحله بعد
             </button>
@@ -192,15 +158,12 @@ export default function RegisterPage() {
 
           {step === 3 && (
             <button
-              className="ml-auto px-8 py-3 rounded-xl text-white
-              bg-gradient-to-r from-green-500 to-emerald-600
-              hover:from-green-600 hover:to-emerald-700
-              shadow-xl transition"
+              onClick={handleSubmit}
+              className="ml-auto px-8 py-3 rounded-xl text-white bg-green-600"
             >
               ثبت نهایی
             </button>
           )}
-
         </div>
 
       </motion.div>
