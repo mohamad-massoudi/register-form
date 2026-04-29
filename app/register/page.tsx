@@ -3,13 +3,12 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import { useStudents } from "../store/studentstore"
+import { toast } from "sonner"
 
 export default function RegisterPage() {
 
   const [step, setStep] = useState(1)
   const [error, setError] = useState("")
-
-  const { addStudent } = useStudents()
 
 
   const [formData, setFormData] = useState({
@@ -32,17 +31,52 @@ export default function RegisterPage() {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
   }
+const handleSubmit = async () => {
+  setError(""); 
 
-  const handleSubmit = () => {
 
-    const payload = { ...formData }
-
-    addStudent(payload)
-
-    console.log("Saved:", payload)
-
-    alert("ثبت شد ✅")
+  if (!formData.fullName || !formData.nationalId) {
+    setError("نام و نام خانوادگی و کد ملی الزامی هستند");
+    return;
   }
+
+  try {
+    const response = await fetch("/api/student", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      setError(data.message || "خطا در ثبت اطلاعات");
+      return;
+    }
+
+    toast.success("ثبت نام با موفقیت انجام شد")
+    
+    setFormData({
+      fullName: "",
+      nationalId: "",
+      grade: "",
+      lastSchool: "",
+      homeAddress: "",
+      studentPhone: "",
+      gender: "",
+      motherWork: "",
+      motherPhone: "",
+      fatherWork: "",
+      fatherPhone: "",
+    });
+    setStep(1); // برگشت به مرحله اول
+  } catch (err) {
+    console.error(err);
+    setError("مشکل در ارتباط با سرور");
+  }
+};
 
   const nextStep = () => setStep(step + 1)
   const prevStep = () => setStep(step - 1)
@@ -70,7 +104,7 @@ export default function RegisterPage() {
       >
 
         <h1 className="text-4xl font-bold text-center mb-8 text-gray-800 dark:text-white">
-          فرم ثبت‌نام دانش‌آموز
+          فرم ثبت‌ نام دانش‌آموز
         </h1>
 
         {/* progress */}
