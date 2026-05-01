@@ -43,7 +43,7 @@ export default function RegisterPage() {
   const [formData, setFormData] = useState({
     fullName: "",
     nationalId: "",
-    level: "",          // 👈 جدید
+    level: "",
     grade: "",
     field_study: "",
     lastSchool: "",
@@ -54,7 +54,16 @@ export default function RegisterPage() {
     motherPhone: "",
     fatherWork: "",
     fatherPhone: "",
+
+    // فیلدهای ویژه پایه دهم
+    fatherName: "",
+    motherName: "",
+    birthday: "",
+    grade_point: "",
+    academic_guidance_a: "",
+    academic_guidance_b: "",
   })
+
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -75,6 +84,9 @@ export default function RegisterPage() {
       }));
     }
   };
+
+  const GUIDANCE_OPTIONS = ["تجربی", "ریاضی", "انسانی", "فنی"];
+
 
   const validatePhone = (phone: string) =>
     /^09\d{9}$/.test(phone)
@@ -101,6 +113,7 @@ export default function RegisterPage() {
 
     if (!formData.homeAddress.trim())
       errors.homeAddress = "محل سکونت الزامی است"
+
     if (!formData.level)
       errors.level = "مقطع تحصیلی الزامی است"
 
@@ -113,8 +126,23 @@ export default function RegisterPage() {
     ) {
       errors.field_study = "رشته تحصیلی الزامی است"
     }
+
+    // ✅ اعتبارسنجی مخصوص پایه دهم
+    if (formData.grade === "10") {
+      if (!formData.grade_point.trim()) {
+        errors.grade_point = "معدل پایه نهم الزامی است"
+      }
+      if (!formData.academic_guidance_a.trim()) {
+        errors.academic_guidance_a = "هدایت تحصیلی اولویت الف الزامی است"
+      }
+      if (!formData.academic_guidance_b.trim()) {
+        errors.academic_guidance_b = "هدایت تحصیلی اولویت ب الزامی است"
+      }
+    }
+
     return errors
   }
+
 
   const validateStep2 = () => {
     const errors: Record<string, string> = {}
@@ -146,6 +174,8 @@ export default function RegisterPage() {
       errors.motherWork = "محل کار مادر الزامی است"
     if (!formData.fatherWork.trim())
       errors.fatherWork = "محل کار پدر الزامی است"
+    if (!formData.fatherName.trim()) errors.fatherName = "نام پدر الزامی است";
+    if (!formData.motherName.trim()) errors.motherName = "نام مادر الزامی است";
     return errors
   }
 
@@ -172,11 +202,35 @@ export default function RegisterPage() {
         return
       }
 
-      toast.success("ثبت نام با موفقیت انجام شد")
+      // ✅ نمایش کد پیگیری به کاربر
+      if (data.registerCode) {
+        toast.success(`ثبت نام با موفقیت انجام شد. کد پیگیری شما: ${data.registerCode}`)
+        alert(`ثبت نام شما با موفقیت انجام شد.\n\nکد پیگیری شما:\n${data.registerCode}`)
+      } else {
+        toast.success("ثبت نام با موفقیت انجام شد")
+      }
 
+      // ریست فرم
       setFormData({
-        fullName: "", nationalId: "", level: "", grade: "", field_study: "", lastSchool: "",
-        homeAddress: "", studentPhone: "", gender: "", motherWork: "", motherPhone: "", fatherWork: "", fatherPhone: "",
+        fullName: "",
+        nationalId: "",
+        level: "",
+        grade: "",
+        field_study: "",
+        lastSchool: "",
+        homeAddress: "",
+        studentPhone: "",
+        gender: "",
+        motherWork: "",
+        motherPhone: "",
+        fatherWork: "",
+        fatherPhone: "",
+        fatherName: "",
+        motherName: "",
+        birthday: "",
+        grade_point: "",
+        academic_guidance_a: "",
+        academic_guidance_b: "",
       })
       setStep(1)
     } catch (err) {
@@ -184,6 +238,7 @@ export default function RegisterPage() {
       setError("مشکل در ارتباط با سرور")
     }
   }
+
 
   const nextStep = () => {
     setFieldErrors({})
@@ -241,9 +296,9 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex flex-col gap-8 items-center justify-start p-6 bg-linear-to-br from-indigo-200 via-blue-200 to-purple-200 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
- 
+
       <Image src={"/default-logo.jpg"} alt="Logo" width={300} height={300} className="rounded-full shadow-md shadow-white" />
-   
+
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
@@ -334,6 +389,47 @@ export default function RegisterPage() {
                 <FieldError field="field_study" />
               </div>
             )}
+            {formData.grade === "10" && (
+              <>
+                <div>
+                  <input
+                    name="grade_point"
+                    placeholder="معدل پایه نهم"
+                    className={getInputStyle("grade_point")}
+                    value={formData.grade_point}
+                    onChange={handleChange}
+                  />
+                  <FieldError field="grade_point" />
+                </div>
+
+                <div>
+                  <select
+                    name="academic_guidance_a"
+                    className={getInputStyle("academic_guidance_a")}
+                    value={formData.academic_guidance_a}
+                    onChange={handleChange}
+                  >
+                    <option value="">اولویت الف (انتخاب کنید)</option>
+                    {GUIDANCE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                  </select>
+                  <FieldError field="academic_guidance_a" />
+                </div>
+
+                <div>
+                  <select
+                    name="academic_guidance_b"
+                    className={getInputStyle("academic_guidance_b")}
+                    value={formData.academic_guidance_b}
+                    onChange={handleChange}
+                  >
+                    <option value="">اولویت ب (انتخاب کنید)</option>
+                    {GUIDANCE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                  </select>
+                  <FieldError field="academic_guidance_b" />
+                </div>
+              </>
+            )}
+
             <div>
               <input name="lastSchool" placeholder="مدرسه سال قبل" className={getInputStyle("lastSchool")} value={formData.lastSchool} onChange={handleChange} />
               <FieldError field="lastSchool" />
@@ -393,6 +489,42 @@ export default function RegisterPage() {
             animate={{ x: 0, opacity: 1 }}
             className="grid md:grid-cols-2 gap-6"
           >
+              <>
+                <div className="md:col-span-2">
+                  <input
+                    name="fatherName"
+                    placeholder="نام و نام خانوادگی پدر"
+                    className={getInputStyle("fatherName")}
+                    value={formData.fatherName}
+                    onChange={handleChange}
+                  />
+                  <FieldError field="fatherName" />
+                </div>
+
+                <div className="md:col-span-2">
+                  <input
+                    name="motherName"
+                    placeholder="نام و نام خانوادگی مادر"
+                    className={getInputStyle("motherName")}
+                    value={formData.motherName}
+                    onChange={handleChange}
+                  />
+                  <FieldError field="motherName" />
+                </div>
+
+                <div className="md:col-span-2">
+                  <input
+                    name="birthday"
+                    type="date"
+                    placeholder="سال تولد"
+                    className={getInputStyle("birthday")}
+                    value={formData.birthday}
+                    onChange={handleChange}
+                  />
+                  <FieldError field="birthday" />
+                </div>
+              </>
+
             <div>
               <input name="motherWork" placeholder="محل کار مادر" className={getInputStyle("motherWork")} value={formData.motherWork} onChange={handleChange} />
               <FieldError field="motherWork" />

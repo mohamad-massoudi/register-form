@@ -29,6 +29,14 @@ interface IStudent {
   fatherPhone?: string;
   createdAt: string;
   updatedAt: string;
+  fatherName?: string;
+  motherName?: string;
+  birthday?: string;
+  grade_point?: string;
+  academic_guidance_a?: string;
+  academic_guidance_b?: string;
+  registerCode?: string;
+
 }
 
 // const grades = [
@@ -86,6 +94,13 @@ const emptyForm: Omit<IStudent, "_id" | "createdAt" | "updatedAt"> = {
   fatherPhone: "",
   level: "",
   field_study: "",
+  fatherName: "",
+  motherName: "",
+  birthday: "",
+  grade_point: "",
+  academic_guidance_a: "",
+  academic_guidance_b: "",
+
 };
 
 type ModalMode = "add" | "edit" | "view" | null;
@@ -95,7 +110,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
-const [filterLevel, setFilterLevel] = useState("");
+  const [filterLevel, setFilterLevel] = useState("");
   // Filters
   const [filterGrade, setFilterGrade] = useState("");
   const [filterGender, setFilterGender] = useState("");
@@ -156,6 +171,13 @@ const [filterLevel, setFilterLevel] = useState("");
       fatherPhone: student.fatherPhone ?? "",
       level: student.level ?? "",
       field_study: student.field_study ?? "",
+      fatherName: student.fatherName ?? "",
+      motherName: student.motherName ?? "",
+      birthday: student.birthday ?? "",
+      grade_point: student.grade_point ?? "",
+      academic_guidance_a: student.academic_guidance_a ?? "",
+      academic_guidance_b: student.academic_guidance_b ?? "",
+
     });
     setModalMode("edit");
   };
@@ -252,13 +274,13 @@ const [filterLevel, setFilterLevel] = useState("");
   };
 
 
-const levelMap: Record<string, string> = {
-  primary: "دبستان",
-  middle: "متوسطه اول",
-  high: "متوسطه دوم",
-  technical: "هنرستان",
-}
-  
+  const levelMap: Record<string, string> = {
+    primary: "دبستان",
+    middle: "متوسطه اول",
+    high: "متوسطه دوم",
+    technical: "هنرستان",
+  }
+
   const exportToExcel = () => {
     const data = filteredStudents.map((s, i) => ({
       "#": i + 1,
@@ -273,11 +295,19 @@ const levelMap: Record<string, string> = {
       "آدرس": s.homeAddress || "-",
       "شماره مادر": s.motherPhone || "-",
       "شماره پدر": s.fatherPhone || "-",
+      "نام پدر": s.fatherName || "-",
+      "نام مادر": s.motherName || "-",
+      "سال تولد": s.birthday || "-",
+      "معدل نهم": s.grade_point || "-",
+      "هدایت تحصیلی الف": s.academic_guidance_a || "-",
+      "هدایت تحصیلی ب": s.academic_guidance_b || "-",
+      "کد پیگیری": s.registerCode || "-",
+
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(data);
 
-    
+
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
 
@@ -317,8 +347,8 @@ const levelMap: Record<string, string> = {
             exit="exit"
             transition={{ duration: 0.22, ease: "easeOut" }}
             className={`fixed top-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-5 py-3 rounded-2xl text-sm font-medium shadow-xl shadow-zinc-200/70 transition-all ${toast.type === "success"
-                ? "bg-emerald-50 border border-emerald-200 text-emerald-700"
-                : "bg-red-50 border border-red-200 text-red-700"
+              ? "bg-emerald-50 border border-emerald-200 text-emerald-700"
+              : "bg-red-50 border border-red-200 text-red-700"
               }`}
           >
             {toast.type === "success" ? (
@@ -400,17 +430,17 @@ const levelMap: Record<string, string> = {
             </select>
           </div>
           <div className="min-w-35">
-  <label className={labelCls}>مقطع</label>
-  <select
-    title="filter-level"
-    value={filterLevel}
-    onChange={(e) => { setFilterLevel(e.target.value); setFilterGrade(""); }}
-    className={inputCls + " cursor-pointer"}
-  >
-    <option value="">همه مقاطع</option>
-    {levels.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
-  </select>
-</div>
+            <label className={labelCls}>مقطع</label>
+            <select
+              title="filter-level"
+              value={filterLevel}
+              onChange={(e) => { setFilterLevel(e.target.value); setFilterGrade(""); }}
+              className={inputCls + " cursor-pointer"}
+            >
+              <option value="">همه مقاطع</option>
+              {levels.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
+            </select>
+          </div>
           <div className="min-w-35">
             <label className={labelCls}>جنسیت</label>
             <select
@@ -616,7 +646,7 @@ const levelMap: Record<string, string> = {
                   </div>
                   <div>
                     <label className={labelCls}>جنسیت</label>
-                    <select title="choose-gender" className={inputCls + " cursor-pointer"} value={form.gender ?? ""} onChange={e => setForm(f => ({ ...f, gender: e.target.value as "male" | "female"  }))}>
+                    <select title="choose-gender" className={inputCls + " cursor-pointer"} value={form.gender ?? ""} onChange={e => setForm(f => ({ ...f, gender: e.target.value as "male" | "female" }))}>
                       <option value="">انتخاب کنید</option>
                       <option value="male">پسر</option>
                       <option value="female">دختر</option>
@@ -670,6 +700,74 @@ const levelMap: Record<string, string> = {
                   <label className={labelCls}>آدرس منزل</label>
                   <input className={inputCls} value={form.homeAddress} onChange={e => setForm(f => ({ ...f, homeAddress: e.target.value }))} placeholder="تهران، خیابان..." />
                 </div>
+
+                {form.grade === "10" && (
+                  <div className="border-t border-zinc-200 pt-4">
+                    <p className="text-xs text-zinc-500 mb-3 font-medium">
+                      اطلاعات مخصوص پایه دهم
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                      <div>
+                        <label className={labelCls}>نام پدر</label>
+                        <input
+                          className={inputCls}
+                          value={form.fatherName}
+                          onChange={e => setForm(f => ({ ...f, fatherName: e.target.value }))}
+                        />
+                      </div>
+
+                      <div>
+                        <label className={labelCls}>نام مادر</label>
+                        <input
+                          className={inputCls}
+                          value={form.motherName}
+                          onChange={e => setForm(f => ({ ...f, motherName: e.target.value }))}
+                        />
+                      </div>
+
+                      <div>
+                        <label className={labelCls}>سال تولد</label>
+                        <input
+                          type="date"
+                          className={inputCls}
+                          value={form.birthday}
+                          onChange={e => setForm(f => ({ ...f, birthday: e.target.value }))}
+                        />
+                      </div>
+
+                      <div>
+                        <label className={labelCls}>معدل پایه نهم</label>
+                        <input
+                          className={inputCls}
+                          value={form.grade_point}
+                          onChange={e => setForm(f => ({ ...f, grade_point: e.target.value }))}
+                        />
+                      </div>
+
+                      <div>
+                        <label className={labelCls}>هدایت تحصیلی (اولویت الف)</label>
+                        <input
+                          className={inputCls}
+                          value={form.academic_guidance_a}
+                          onChange={e => setForm(f => ({ ...f, academic_guidance_a: e.target.value }))}
+                        />
+                      </div>
+
+                      <div>
+                        <label className={labelCls}>هدایت تحصیلی (اولویت ب)</label>
+                        <input
+                          className={inputCls}
+                          value={form.academic_guidance_b}
+                          onChange={e => setForm(f => ({ ...f, academic_guidance_b: e.target.value }))}
+                        />
+                      </div>
+
+                    </div>
+                  </div>
+                )}
+
                 {/* Parents */}
                 <div className="border-t border-zinc-200 pt-4">
                   <p className="text-xs text-zinc-500 mb-3 font-medium">اطلاعات والدین</p>
@@ -762,7 +860,15 @@ const levelMap: Record<string, string> = {
                   ["شماره پدر", selectedStudent.fatherPhone],
                   ["مقطع", levels.find(l => l.value === selectedStudent.level)?.label],
                   ["پایه", selectedStudent.grade],
-["رشته تحصیلی", selectedStudent.field_study],
+                  ["رشته تحصیلی", selectedStudent.field_study],
+                  ["نام پدر", selectedStudent.fatherName],
+                  ["نام مادر", selectedStudent.motherName],
+                  ["سال تولد", selectedStudent.birthday],
+                  ["معدل نهم", selectedStudent.grade_point],
+                  ["هدایت تحصیلی الف", selectedStudent.academic_guidance_a],
+                  ["هدایت تحصیلی ب", selectedStudent.academic_guidance_b],
+                  ["کد پیگیری", selectedStudent.registerCode],
+
                 ].map(([k, v]) => (
                   <div key={k} className="flex items-center justify-between py-2.5 border-b border-zinc-200 last:border-0">
                     <span className="text-xs text-zinc-500">{k}</span>
