@@ -11,7 +11,7 @@ export interface IStudent extends Document {
   studentPhone?: string;
   gender?: "male" | "female";
 
-  birthday?: Date;
+  birthday?: string;
   grade_point?: string;
 
   academic_guidance_a?: string;
@@ -32,10 +32,9 @@ export interface IStudent extends Document {
 }
 
 function generateRegisterCode(): string {
-  const randomPart = Math.floor(100000 + Math.random() * 900000);
-  const timePart = Date.now().toString().slice(-4);
+  const randomPart = Math.floor(100000 + Math.random() * 900000); // 6-digit random number
 
-  return `STD-${timePart}${randomPart}`;
+  return randomPart.toString(); // Convert to string for storage
 }
 
 const studentSchema = new Schema<IStudent>(
@@ -47,7 +46,7 @@ const studentSchema = new Schema<IStudent>(
     grade: { type: String },
     level: { type: String },
     field_study: { type: String },
-    birthday: { type: Date },
+    birthday: { type: String },
     grade_point: { type: String },
 
     academic_guidance_a: {

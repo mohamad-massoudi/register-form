@@ -38,7 +38,7 @@ interface IStudent {
   registerCode?: string;
 
 }
-
+const GUIDANCE_OPTIONS = ["تجربی", "ریاضی", "انسانی", "فنی و حرفه‌ای"];
 // const grades = [
 //   { label: "پایه اول", value: "first" },
 //   { label: "پایه دوم", value: "second" },
@@ -282,28 +282,29 @@ export default function AdminPage() {
   }
 
   const exportToExcel = () => {
-    const data = filteredStudents.map((s, i) => ({
-      "#": i + 1,
-      "نام کامل": s.fullName,
-      "کد ملی": s.nationalId,
-      "مقطع": levelMap[s.level] || "-",
-      "پایه": s.grade || "-",
-      "رشته": s.field_study || "-",
-      "جنسیت": s.gender === "male" ? "پسر" : s.gender === "female" ? "دختر" : "-",
-      "شماره تماس": s.studentPhone || "-",
-      "مدرسه قبلی": s.lastSchool || "-",
-      "آدرس": s.homeAddress || "-",
-      "شماره مادر": s.motherPhone || "-",
-      "شماره پدر": s.fatherPhone || "-",
-      "نام پدر": s.fatherName || "-",
-      "نام مادر": s.motherName || "-",
-      "سال تولد": s.birthday || "-",
-      "معدل نهم": s.grade_point || "-",
-      "هدایت تحصیلی الف": s.academic_guidance_a || "-",
-      "هدایت تحصیلی ب": s.academic_guidance_b || "-",
-      "کد پیگیری": s.registerCode || "-",
-
-    }));
+const data = filteredStudents.map((s, i) => ({
+  "#": i + 1,
+  "نام کامل": s.fullName,
+  "کد ملی": s.nationalId,
+  "جنسیت": s.gender === "male" ? "پسر" : s.gender === "female" ? "دختر" : "-",
+  "مقطع": levelMap[s.level] || "-",
+  "پایه": grades.find(g => g.value === s.grade)?.label || s.grade || "-",
+  "رشته": s.field_study || "-",
+  "شماره شاد": s.studentPhone || "-",
+  "مدرسه قبلی": s.lastSchool || "-",
+  "آدرس": s.homeAddress || "-",
+  "نام پدر": s.fatherName || "-",
+  "شماره پدر": s.fatherPhone || "-",
+  "محل کار پدر": s.fatherWork || "-",
+  "نام مادر": s.motherName || "-",
+  "شماره مادر": s.motherPhone || "-",
+  "محل کار مادر": s.motherWork || "-",
+  "تاریخ تولد": s.birthday || "-",
+  "معدل پایه نهم": s.grade_point || "-",
+  "هدایت تحصیلی (الف)": s.academic_guidance_a || "-",
+  "هدایت تحصیلی (ب)": s.academic_guidance_b || "-",
+  "کد پیگیری": s.registerCode || "-",
+}));
 
     const worksheet = XLSX.utils.json_to_sheet(data);
 
@@ -365,7 +366,7 @@ export default function AdminPage() {
         )}
       </AnimatePresence>
 
-      <div className="relative max-w-7xl mx-auto px-4 py-10">
+      <div className="relative w-full mx-auto px-4 py-10">
         {/* Header */}
         <div className="mb-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -379,10 +380,12 @@ export default function AdminPage() {
             </div>
             <p className="text-sm text-zinc-500 mr-12">{students.length} درخواست داده</p>
           </div>
+          <div className="flex items-center gap-4">
+
           <button
             onClick={openAdd}
             className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all shadow-lg shadow-indigo-500/15 active:scale-95"
-          >
+            >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
@@ -397,6 +400,7 @@ export default function AdminPage() {
             </svg>
             خروجی Excel
           </button>
+            </div>
         </div>
 
         {/* Filters */}
@@ -512,6 +516,12 @@ export default function AdminPage() {
                     <th className="text-right text-xs font-medium text-zinc-500 px-5 py-3.5">رشته</th>
                     <th className="text-right text-xs font-medium text-zinc-500 px-5 py-3.5">جنسیت</th>
                     <th className="text-right text-xs font-medium text-zinc-500 px-5 py-3.5">شماره تماس</th>
+                    <th className="text-right text-xs font-medium text-zinc-500 px-5 py-3.5">نام پدر</th>
+<th className="text-right text-xs font-medium text-zinc-500 px-5 py-3.5">تاریخ تولد</th>
+<th className="text-right text-xs font-medium text-zinc-500 px-5 py-3.5">معدل نهم</th>
+<th className="text-right text-xs font-medium text-zinc-500 px-5 py-3.5">هدایت الف</th>
+<th className="text-right text-xs font-medium text-zinc-500 px-5 py-3.5">هدایت ب</th>
+<th className="text-right text-xs font-medium text-zinc-500 px-5 py-3.5">کد پیگیری</th>
                     <th className="text-right text-xs font-medium text-zinc-500 px-5 py-3.5">عملیات</th>
                   </tr>
                 </thead>
@@ -554,6 +564,30 @@ export default function AdminPage() {
                           ) : <span className="text-zinc-600">—</span>}
                         </td>
                         <td className="px-5 py-4 text-zinc-600 font-mono text-xs">{student.studentPhone || "—"}</td>
+                        <td className="px-5 py-4 text-zinc-600 text-xs">{student.fatherName || "—"}</td>
+<td className="px-5 py-4 text-zinc-600 text-xs font-mono">{student.birthday || "—"}</td>
+<td className="px-5 py-4 text-zinc-600 text-xs">{student.grade_point || "—"}</td>
+<td className="px-5 py-4 text-xs">
+  {student.academic_guidance_a ? (
+    <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-100 text-[10px]">
+      {student.academic_guidance_a}
+    </span>
+  ) : "—"}
+</td>
+<td className="px-5 py-4 text-xs">
+  {student.academic_guidance_b ? (
+    <span className="px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-100 text-[10px]">
+      {student.academic_guidance_b}
+    </span>
+  ) : "—"}
+</td>
+<td className="px-5 py-4 text-zinc-500 text-xs font-mono">
+  {student.registerCode ? (
+    <span className="px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-600 border border-zinc-200 text-[10px] tracking-wider">
+      {student.registerCode}
+    </span>
+  ) : "—"}
+</td>
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-2">
                             <button
@@ -701,72 +735,128 @@ export default function AdminPage() {
                   <input className={inputCls} value={form.homeAddress} onChange={e => setForm(f => ({ ...f, homeAddress: e.target.value }))} placeholder="تهران، خیابان..." />
                 </div>
 
-                {form.grade === "10" && (
-                  <div className="border-t border-zinc-200 pt-4">
-                    <p className="text-xs text-zinc-500 mb-3 font-medium">
-                      اطلاعات مخصوص پایه دهم
-                    </p>
+             {form.grade === "10" && (
+  <div className="border-t border-zinc-200 pt-4">
+    <p className="text-xs text-zinc-500 mb-3 font-medium">
+      اطلاعات مخصوص پایه دهم
+    </p>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-                      <div>
-                        <label className={labelCls}>نام پدر</label>
-                        <input
-                          className={inputCls}
-                          value={form.fatherName}
-                          onChange={e => setForm(f => ({ ...f, fatherName: e.target.value }))}
-                        />
-                      </div>
+      <div>
+        <label className={labelCls}>نام پدر</label>
+        <input
+          placeholder="نام پدر"
+          className={inputCls}
+          value={form.fatherName}
+          onChange={e => setForm(f => ({ ...f, fatherName: e.target.value }))}
+        />
+      </div>
 
-                      <div>
-                        <label className={labelCls}>نام مادر</label>
-                        <input
-                          className={inputCls}
-                          value={form.motherName}
-                          onChange={e => setForm(f => ({ ...f, motherName: e.target.value }))}
-                        />
-                      </div>
+      <div>
+        <label className={labelCls}>نام مادر</label>
+        <input
+          placeholder="نام مادر"
+          className={inputCls}
+          value={form.motherName}
+          onChange={e => setForm(f => ({ ...f, motherName: e.target.value }))}
+        />
+      </div>
 
-                      <div>
-                        <label className={labelCls}>سال تولد</label>
-                        <input
-                          type="date"
-                          className={inputCls}
-                          value={form.birthday}
-                          onChange={e => setForm(f => ({ ...f, birthday: e.target.value }))}
-                        />
-                      </div>
+      {/* تاریخ تولد با سه select */}
+      <div className="sm:col-span-2">
+        <label className={labelCls}>تاریخ تولد</label>
+        <div className="grid grid-cols-3 gap-3">
+          <select
+            title="birthdayYear"
+            className={inputCls + " cursor-pointer"}
+            value={form.birthday?.split("/")[0] || ""}
+            onChange={e => {
+              const [, month = "", day = ""] = (form.birthday || "").split("/");
+              setForm(f => ({ ...f, birthday: `${e.target.value}/${month}/${day}` }));
+            }}
+          >
+            <option value="">سال</option>
+            {Array.from({ length: 36 }, (_, i) => 1370 + i).map(year => (
+              <option key={year} value={year}>{year}</option>
+            ))}
+          </select>
 
-                      <div>
-                        <label className={labelCls}>معدل پایه نهم</label>
-                        <input
-                          className={inputCls}
-                          value={form.grade_point}
-                          onChange={e => setForm(f => ({ ...f, grade_point: e.target.value }))}
-                        />
-                      </div>
+          <select
+            title="birthdayMonth"
+            className={inputCls + " cursor-pointer"}
+            value={form.birthday?.split("/")[1] || ""}
+            onChange={e => {
+              const [year = "", , day = ""] = (form.birthday || "").split("/");
+              setForm(f => ({ ...f, birthday: `${year}/${e.target.value}/${day}` }));
+            }}
+          >
+            <option value="">ماه</option>
+            {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+              <option key={month} value={month}>{month}</option>
+            ))}
+          </select>
 
-                      <div>
-                        <label className={labelCls}>هدایت تحصیلی (اولویت الف)</label>
-                        <input
-                          className={inputCls}
-                          value={form.academic_guidance_a}
-                          onChange={e => setForm(f => ({ ...f, academic_guidance_a: e.target.value }))}
-                        />
-                      </div>
+          <select
+            title="birthdayDay"
+            className={inputCls + " cursor-pointer"}
+            value={form.birthday?.split("/")[2] || ""}
+            onChange={e => {
+              const [year = "", month = ""] = (form.birthday || "").split("/");
+              setForm(f => ({ ...f, birthday: `${year}/${month}/${e.target.value}` }));
+            }}
+          >
+            <option value="">روز</option>
+            {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+              <option key={day} value={day}>{day}</option>
+            ))}
+          </select>
+        </div>
+      </div>
 
-                      <div>
-                        <label className={labelCls}>هدایت تحصیلی (اولویت ب)</label>
-                        <input
-                          className={inputCls}
-                          value={form.academic_guidance_b}
-                          onChange={e => setForm(f => ({ ...f, academic_guidance_b: e.target.value }))}
-                        />
-                      </div>
+      <div>
+        <label className={labelCls}>معدل پایه نهم</label>
+        <input
+          placeholder="مثال: 18.50"
+          className={inputCls}
+          value={form.grade_point}
+          onChange={e => setForm(f => ({ ...f, grade_point: e.target.value }))}
+        />
+      </div>
 
-                    </div>
-                  </div>
-                )}
+      <div>
+        <label className={labelCls}>هدایت تحصیلی (اولویت الف)</label>
+        <select
+          title="academic_guidance_a"
+          className={inputCls + " cursor-pointer"}
+          value={form.academic_guidance_a}
+          onChange={e => setForm(f => ({ ...f, academic_guidance_a: e.target.value }))}
+        >
+          <option value="">انتخاب کنید</option>
+          {GUIDANCE_OPTIONS.map(opt => (
+            <option key={opt} value={opt}>{opt}</option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className={labelCls}>هدایت تحصیلی (اولویت ب)</label>
+        <select
+          title="academic_guidance_b"
+          className={inputCls + " cursor-pointer"}
+          value={form.academic_guidance_b}
+          onChange={e => setForm(f => ({ ...f, academic_guidance_b: e.target.value }))}
+        >
+          <option value="">انتخاب کنید</option>
+          {GUIDANCE_OPTIONS.map(opt => (
+            <option key={opt} value={opt}>{opt}</option>
+          ))}
+        </select>
+      </div>
+
+    </div>
+  </div>
+)}
 
                 {/* Parents */}
                 <div className="border-t border-zinc-200 pt-4">
@@ -847,35 +937,67 @@ export default function AdminPage() {
                   </svg>
                 </button>
               </div>
-              <div className="p-6 space-y-1">
-                {[
-                  ["پایه", selectedStudent.grade],
-                  ["جنسیت", selectedStudent.gender === "male" ? "پسر" : selectedStudent.gender === "female" ? "دختر" : undefined],
-                  ["مدرسه قبلی", selectedStudent.lastSchool],
-                  ["شماره شاد", selectedStudent.studentPhone],
-                  ["آدرس", selectedStudent.homeAddress],
-                  ["محل کار مادر", selectedStudent.motherWork],
-                  ["شماره مادر", selectedStudent.motherPhone],
-                  ["محل کار پدر", selectedStudent.fatherWork],
-                  ["شماره پدر", selectedStudent.fatherPhone],
-                  ["مقطع", levels.find(l => l.value === selectedStudent.level)?.label],
-                  ["پایه", selectedStudent.grade],
-                  ["رشته تحصیلی", selectedStudent.field_study],
-                  ["نام پدر", selectedStudent.fatherName],
-                  ["نام مادر", selectedStudent.motherName],
-                  ["سال تولد", selectedStudent.birthday],
-                  ["معدل نهم", selectedStudent.grade_point],
-                  ["هدایت تحصیلی الف", selectedStudent.academic_guidance_a],
-                  ["هدایت تحصیلی ب", selectedStudent.academic_guidance_b],
-                  ["کد پیگیری", selectedStudent.registerCode],
+             <div className="p-6 space-y-1">
+  {/* اطلاعات اصلی */}
+  <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest pb-1">اطلاعات دانش‌آموز</p>
+  {[
+    ["مقطع", levels.find(l => l.value === selectedStudent.level)?.label],
+    ["پایه", grades.find(g => g.value === selectedStudent.grade)?.label],
+    ["رشته تحصیلی", selectedStudent.field_study],
+    ["جنسیت", selectedStudent.gender === "male" ? "پسر" : selectedStudent.gender === "female" ? "دختر" : undefined],
+    ["مدرسه قبلی", selectedStudent.lastSchool],
+    ["شماره شاد", selectedStudent.studentPhone],
+    ["آدرس", selectedStudent.homeAddress],
+    ["کد پیگیری", selectedStudent.registerCode],
+  ].map(([k, v]) =>
+    v ? (
+      <div key={k as string} className="flex items-center justify-between py-2 border-b border-zinc-100 last:border-0">
+        <span className="text-xs text-zinc-500">{k}</span>
+        <span className="text-sm text-zinc-800 font-medium">{v}</span>
+      </div>
+    ) : null
+  )}
 
-                ].map(([k, v]) => (
-                  <div key={k} className="flex items-center justify-between py-2.5 border-b border-zinc-200 last:border-0">
-                    <span className="text-xs text-zinc-500">{k}</span>
-                    <span className="text-sm text-zinc-800">{v || "—"}</span>
-                  </div>
-                ))}
-              </div>
+  {/* اطلاعات والدین */}
+  <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest pt-3 pb-1">اطلاعات والدین</p>
+  {[
+    ["نام پدر", selectedStudent.fatherName],
+    ["شماره پدر", selectedStudent.fatherPhone],
+    ["محل کار پدر", selectedStudent.fatherWork],
+    ["نام مادر", selectedStudent.motherName],
+    ["شماره مادر", selectedStudent.motherPhone],
+    ["محل کار مادر", selectedStudent.motherWork],
+  ].map(([k, v]) =>
+    v ? (
+      <div key={k as string} className="flex items-center justify-between py-2 border-b border-zinc-100 last:border-0">
+        <span className="text-xs text-zinc-500">{k}</span>
+        <span className="text-sm text-zinc-800 font-medium">{v}</span>
+      </div>
+    ) : null
+  )}
+
+  {/* اطلاعات ویژه پایه دهم */}
+  {selectedStudent.grade === "10" && (
+    selectedStudent.birthday || selectedStudent.grade_point || selectedStudent.academic_guidance_a
+  ) && (
+    <>
+      <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest pt-3 pb-1">اطلاعات تکمیلی پایه دهم</p>
+      {[
+        ["تاریخ تولد", selectedStudent.birthday],
+        ["معدل پایه نهم", selectedStudent.grade_point],
+        ["هدایت تحصیلی (الف)", selectedStudent.academic_guidance_a],
+        ["هدایت تحصیلی (ب)", selectedStudent.academic_guidance_b],
+      ].map(([k, v]) =>
+        v ? (
+          <div key={k as string} className="flex items-center justify-between py-2 border-b border-zinc-100 last:border-0">
+            <span className="text-xs text-zinc-500">{k}</span>
+            <span className="text-sm text-zinc-800 font-medium">{v}</span>
+          </div>
+        ) : null
+      )}
+    </>
+  )}
+</div>
               <div className="px-6 py-4 border-t border-zinc-200 flex gap-3 justify-end">
                 <button
                   onClick={() => { closeModal(); openEdit(selectedStudent); }}

@@ -39,7 +39,7 @@ export default function RegisterPage() {
   const [step, setStep] = useState(1)
   const [error, setError] = useState("")
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-
+const [successData, setSuccessData] = useState<{ registerCode: string } | null>(null)
   const [formData, setFormData] = useState({
     fullName: "",
     nationalId: "",
@@ -127,14 +127,18 @@ export default function RegisterPage() {
       errors.field_study = "رشته تحصیلی الزامی است"
     }
 
-    // ✅ اعتبارسنجی مخصوص پایه دهم
+
     if (formData.grade === "10") {
       if (!formData.grade_point.trim()) {
         errors.grade_point = "معدل پایه نهم الزامی است"
+      } else if (isNaN(Number(formData.grade_point))) {
+        errors.grade_point = "معدل باید عدد باشد"
       }
+
       if (!formData.academic_guidance_a.trim()) {
         errors.academic_guidance_a = "هدایت تحصیلی اولویت الف الزامی است"
       }
+
       if (!formData.academic_guidance_b.trim()) {
         errors.academic_guidance_b = "هدایت تحصیلی اولویت ب الزامی است"
       }
@@ -203,12 +207,14 @@ export default function RegisterPage() {
       }
 
       // ✅ نمایش کد پیگیری به کاربر
-      if (data.registerCode) {
-        toast.success(`ثبت نام با موفقیت انجام شد. کد پیگیری شما: ${data.registerCode}`)
-        alert(`ثبت نام شما با موفقیت انجام شد.\n\nکد پیگیری شما:\n${data.registerCode}`)
-      } else {
-        toast.success("ثبت نام با موفقیت انجام شد")
-      }
+//   if (data.registerCode) {
+//   toast.success(`ثبت نام با موفقیت انجام شد. کد پیگیری شما: ${data.registerCode}`)
+//   alert(`ثبت نام شما با موفقیت انجام شد.\n\nکد پیگیری شما:\n${data.registerCode}`)
+// } else {
+//   toast.success("ثبت نام با موفقیت انجام شد")
+// }
+setSuccessData({ registerCode: data.registerCode || "" })
+toast.success("ثبت نام با موفقیت انجام شد")
 
       // ریست فرم
       setFormData({
@@ -293,7 +299,79 @@ export default function RegisterPage() {
     fieldErrors[field] ? (
       <p className="text-red-500 text-xs mt-1 text-right">{fieldErrors[field]}</p>
     ) : null
+if (successData) {
+  return (
+    <div className="min-h-screen flex flex-col gap-8 items-center justify-center p-6 bg-linear-to-br from-indigo-200 via-blue-200 to-purple-200 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <Image src={"/default-logo.jpg"} alt="Logo" width={150} height={150} className="rounded-full shadow-md shadow-white" />
 
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-md rounded-3xl shadow-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-10 border border-white/20 text-center"
+      >
+        {/* آیکون تیک */}
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+          className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-6"
+        >
+          <svg className="w-10 h-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </motion.div>
+
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+          ثبت‌نام با موفقیت انجام شد
+        </h2>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mb-8">
+          اطلاعات شما با موفقیت ثبت شد. کد پیگیری خود را نگه دارید.
+        </p>
+
+        {/* کد پیگیری */}
+        {successData.registerCode && (
+          <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-2xl p-5 mb-8">
+            <p className="text-xs text-indigo-500 dark:text-indigo-400 mb-2">کد پیگیری شما</p>
+            <p className="text-3xl font-bold tracking-widest text-indigo-700 dark:text-indigo-300 font-mono">
+              {successData.registerCode}
+            </p>
+          </div>
+        )}
+
+        <button
+          onClick={() => {
+            setSuccessData(null)
+            setFormData({
+              fullName: "",
+              nationalId: "",
+              level: "",
+              grade: "",
+              field_study: "",
+              lastSchool: "",
+              homeAddress: "",
+              studentPhone: "",
+              gender: "",
+              motherWork: "",
+              motherPhone: "",
+              fatherWork: "",
+              fatherPhone: "",
+              fatherName: "",
+              motherName: "",
+              birthday: "",
+              grade_point: "",
+              academic_guidance_a: "",
+              academic_guidance_b: "",
+            })
+            setStep(1)
+          }}
+          className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition-all active:scale-95"
+        >
+          ثبت‌نام جدید
+        </button>
+      </motion.div>
+    </div>
+  )
+}
   return (
     <div className="min-h-screen flex flex-col gap-8 items-center justify-start p-6 bg-linear-to-br from-indigo-200 via-blue-200 to-purple-200 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
 
@@ -404,6 +482,7 @@ export default function RegisterPage() {
 
                 <div>
                   <select
+                  title="academic_guidance_a"
                     name="academic_guidance_a"
                     className={getInputStyle("academic_guidance_a")}
                     value={formData.academic_guidance_a}
@@ -417,6 +496,7 @@ export default function RegisterPage() {
 
                 <div>
                   <select
+                  title="academic_guidance_b"
                     name="academic_guidance_b"
                     className={getInputStyle("academic_guidance_b")}
                     value={formData.academic_guidance_b}
@@ -513,16 +593,74 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="md:col-span-2">
-                  <input
-                    name="birthday"
-                    type="date"
-                    placeholder="سال تولد"
-                    className={getInputStyle("birthday")}
-                    value={formData.birthday}
-                    onChange={handleChange}
-                  />
-                  <FieldError field="birthday" />
-                </div>
+  <label className="block text-sm mb-2 text-slate-700 dark:text-slate-200">
+    تاریخ تولد
+  </label>
+
+  <div className="grid grid-cols-3 gap-3">
+    <select
+      title="birthdayYear"
+      className={getInputStyle("birthday")}
+      value={formData.birthday.split("/")[0] || ""}
+      onChange={(e) => {
+        const [, month = "", day = ""] = formData.birthday.split("/")
+        setFormData(prev => ({
+          ...prev,
+          birthday: `${e.target.value}/${month}/${day}`,
+        }))
+      }}
+    >
+      <option value="">سال</option>
+      {Array.from({ length: 36 }, (_, i) => 1370 + i).map(year => (
+        <option key={year} value={year}>
+          {year}
+        </option>
+      ))}
+    </select>
+
+    <select
+      title="birthdayMonth"
+      className={getInputStyle("birthday")}
+      value={formData.birthday.split("/")[1] || ""}
+      onChange={(e) => {
+        const [year = "", , day = ""] = formData.birthday.split("/")
+        setFormData(prev => ({
+          ...prev,
+          birthday: `${year}/${e.target.value}/${day}`,
+        }))
+      }}
+    >
+      <option value="">ماه</option>
+      {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+        <option key={month} value={month}>
+          {month}
+        </option>
+      ))}
+    </select>
+
+    <select
+      title="birthdayDay"
+      className={getInputStyle("birthday")}
+      value={formData.birthday.split("/")[2] || ""}
+      onChange={(e) => {
+        const [year = "", month = ""] = formData.birthday.split("/")
+        setFormData(prev => ({
+          ...prev,
+          birthday: `${year}/${month}/${e.target.value}`,
+        }))
+      }}
+    >
+      <option value="">روز</option>
+      {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+        <option key={day} value={day}>
+          {day}
+        </option>
+      ))}
+    </select>
+  </div>
+
+  <FieldError field="birthday" />
+</div>
               </>
 
             <div>
