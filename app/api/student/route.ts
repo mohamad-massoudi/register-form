@@ -11,11 +11,13 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const grade = searchParams.get("grade");
     const gender = searchParams.get("gender");
+    const level = searchParams.get("level");
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const filter: any = {};
     if (grade) filter.grade = grade;
     if (gender) filter.gender = gender;
+    if (level) filter.level = level;
 
     const students = await Student.find(filter).sort({ createdAt: -1 });
     return NextResponse.json(students, { status: 200 });

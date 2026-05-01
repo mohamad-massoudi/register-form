@@ -6,6 +6,9 @@ import { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+
 
 
 
@@ -13,11 +16,13 @@ interface IStudent {
   _id: string;
   fullName: string;
   nationalId: string;
-  grade?: string;
-  lastSchool?: string;
+  level: string;
+  field_study?: string;
+  grade: string;
+  lastSchool: string;
   homeAddress?: string;
   studentPhone?: string;
-  gender?: "male" | "female";
+  gender: "male" | "female";
   motherWork?: string;
   motherPhone?: string;
   fatherWork?: string;
@@ -26,7 +31,46 @@ interface IStudent {
   updatedAt: string;
 }
 
-const GRADES = ["هفتم", "هشتم", "نهم", "دهم", "یازدهم", "دوازدهم"];
+// const grades = [
+//   { label: "پایه اول", value: "first" },
+//   { label: "پایه دوم", value: "second" },
+//   { label: "پایه سوم", value: "third" },
+//   { label: "پایه چهارم", value: "fourth" },
+//   { label: "پایه پنجم", value: "fifth" },
+//   { label: "پایه ششم", value: "sixth" },
+//   { label: "پایه هفتم", value: "seventh" },
+//   { label: "پایه هشتم", value: "eighth" },
+//   { label: "پایه نهم", value: "ninth" },
+//   { label: "پایه دهم", value: "tenth" },
+//   { label: "پایه یازدهم", value: "eleventh" },
+//   { label: "پایه دوازدهم", value: "twelfth" },
+// ];
+
+
+const levels = [
+  { label: "دبستان", value: "primary" },
+  { label: "متوسطه اول", value: "middle" },
+  { label: "متوسطه دوم", value: "high" },
+  { label: "هنرستان", value: "technical" },
+]
+
+// grades رو جایگزین کن با مقادیر عددی که فرم ذخیره می‌کنه
+const grades = [
+  { label: "پایه اول", value: "1" },
+  { label: "پایه دوم", value: "2" },
+  { label: "پایه سوم", value: "3" },
+  { label: "پایه چهارم", value: "4" },
+  { label: "پایه پنجم", value: "5" },
+  { label: "پایه ششم", value: "6" },
+  { label: "پایه هفتم", value: "7" },
+  { label: "پایه هشتم", value: "8" },
+  { label: "پایه نهم", value: "9" },
+  { label: "پایه دهم", value: "10" },
+  { label: "پایه یازدهم", value: "11" },
+  { label: "پایه دوازدهم", value: "12" },
+];
+
+
 
 const emptyForm: Omit<IStudent, "_id" | "createdAt" | "updatedAt"> = {
   fullName: "",
@@ -35,11 +79,13 @@ const emptyForm: Omit<IStudent, "_id" | "createdAt" | "updatedAt"> = {
   lastSchool: "",
   homeAddress: "",
   studentPhone: "",
-  gender: undefined,
+  gender: "male",
   motherWork: "",
   motherPhone: "",
   fatherWork: "",
   fatherPhone: "",
+  level: "",
+  field_study: "",
 };
 
 type ModalMode = "add" | "edit" | "view" | null;
@@ -49,7 +95,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
-
+const [filterLevel, setFilterLevel] = useState("");
   // Filters
   const [filterGrade, setFilterGrade] = useState("");
   const [filterGender, setFilterGender] = useState("");
@@ -72,6 +118,7 @@ export default function AdminPage() {
       const params = new URLSearchParams();
       if (filterGrade) params.set("grade", filterGrade);
       if (filterGender) params.set("gender", filterGender);
+      if (filterLevel) params.set("level", filterLevel);
       const res = await axiosClient.get(`/student?${params.toString()}`);
       if (!res.data) throw new Error();
       const data = await res.data;
@@ -81,7 +128,7 @@ export default function AdminPage() {
     } finally {
       setLoading(false);
     }
-  }, [filterGrade, filterGender]);
+  }, [filterGrade, filterGender, filterLevel]);
 
   useEffect(() => {
     fetchStudents();
@@ -107,6 +154,8 @@ export default function AdminPage() {
       motherPhone: student.motherPhone ?? "",
       fatherWork: student.fatherWork ?? "",
       fatherPhone: student.fatherPhone ?? "",
+      level: student.level ?? "",
+      field_study: student.field_study ?? "",
     });
     setModalMode("edit");
   };
@@ -202,6 +251,48 @@ export default function AdminPage() {
     exit: { opacity: 0, y: -16, scale: 0.96 },
   };
 
+
+const levelMap: Record<string, string> = {
+  primary: "دبستان",
+  middle: "متوسطه اول",
+  high: "متوسطه دوم",
+  technical: "هنرستان",
+}
+  
+  const exportToExcel = () => {
+    const data = filteredStudents.map((s, i) => ({
+      "#": i + 1,
+      "نام کامل": s.fullName,
+      "کد ملی": s.nationalId,
+      "مقطع": levelMap[s.level] || "-",
+      "پایه": s.grade || "-",
+      "رشته": s.field_study || "-",
+      "جنسیت": s.gender === "male" ? "پسر" : s.gender === "female" ? "دختر" : "-",
+      "شماره تماس": s.studentPhone || "-",
+      "مدرسه قبلی": s.lastSchool || "-",
+      "آدرس": s.homeAddress || "-",
+      "شماره مادر": s.motherPhone || "-",
+      "شماره پدر": s.fatherPhone || "-",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+
+    
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
+
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+
+    const fileData = new Blob([excelBuffer], {
+      type: "application/octet-stream",
+    });
+
+    saveAs(fileData, "students.xlsx");
+  };
+
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900" dir="rtl">
       {/* Background grid */}
@@ -219,29 +310,28 @@ export default function AdminPage() {
       {/* Toast */}
       <AnimatePresence>
         {toast && (
-        <motion.div
-          variants={toastMotion}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-          transition={{ duration: 0.22, ease: "easeOut" }}
-          className={`fixed top-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-5 py-3 rounded-2xl text-sm font-medium shadow-xl shadow-zinc-200/70 transition-all ${
-            toast.type === "success"
-              ? "bg-emerald-50 border border-emerald-200 text-emerald-700"
-              : "bg-red-50 border border-red-200 text-red-700"
-          }`}
-        >
-          {toast.type === "success" ? (
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-          ) : (
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          )}
-          {toast.msg}
-        </motion.div>
+          <motion.div
+            variants={toastMotion}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            className={`fixed top-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-5 py-3 rounded-2xl text-sm font-medium shadow-xl shadow-zinc-200/70 transition-all ${toast.type === "success"
+                ? "bg-emerald-50 border border-emerald-200 text-emerald-700"
+                : "bg-red-50 border border-red-200 text-red-700"
+              }`}
+          >
+            {toast.type === "success" ? (
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            )}
+            {toast.msg}
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -268,11 +358,20 @@ export default function AdminPage() {
             </svg>
             افزودن دانش‌آموز
           </button>
+          <button
+            onClick={exportToExcel}
+            className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all shadow-lg shadow-emerald-500/15 active:scale-95"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 16v-8m0 8l-3-3m3 3l3-3M4 20h16" />
+            </svg>
+            خروجی Excel
+          </button>
         </div>
 
         {/* Filters */}
         <div className="bg-white border border-zinc-200 rounded-2xl p-5 mb-6 flex flex-wrap gap-3 items-end">
-          <div className="flex-1 min-w-[180px]">
+          <div className="flex-1 min-w-45">
             <label className={labelCls}>جستجو</label>
             <div className="relative">
               <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -287,19 +386,32 @@ export default function AdminPage() {
               />
             </div>
           </div>
-          <div className="min-w-[140px]">
+
+          <div className="min-w-35">
             <label className={labelCls}>پایه</label>
             <select
-            title="filtre-grade"
+              title="filtre-grade"
               value={filterGrade}
               onChange={(e) => setFilterGrade(e.target.value)}
               className={inputCls + " cursor-pointer"}
             >
               <option value="">همه پایه‌ها</option>
-              {GRADES.map((g) => <option key={g} value={g}>{g}</option>)}
+              {grades.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
             </select>
           </div>
-          <div className="min-w-[140px]">
+          <div className="min-w-35">
+  <label className={labelCls}>مقطع</label>
+  <select
+    title="filter-level"
+    value={filterLevel}
+    onChange={(e) => { setFilterLevel(e.target.value); setFilterGrade(""); }}
+    className={inputCls + " cursor-pointer"}
+  >
+    <option value="">همه مقاطع</option>
+    {levels.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
+  </select>
+</div>
+          <div className="min-w-35">
             <label className={labelCls}>جنسیت</label>
             <select
               title="filter-gender"
@@ -312,9 +424,9 @@ export default function AdminPage() {
               <option value="female">دختر</option>
             </select>
           </div>
-          {(filterGrade || filterGender || search) && (
+          {(filterGrade || filterLevel || filterGender || search) && (
             <button
-              onClick={() => { setFilterGrade(""); setFilterGender(""); setSearch(""); }}
+              onClick={() => { setFilterGrade(""); setFilterLevel(""); setFilterGender(""); setSearch(""); }}
               className="flex items-center gap-1.5 text-xs text-zinc-600 hover:text-zinc-900 border border-zinc-200 hover:border-zinc-300 px-3 py-2.5 rounded-xl transition-all"
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -365,69 +477,88 @@ export default function AdminPage() {
                     <th className="text-right text-xs font-medium text-zinc-500 px-5 py-3.5">#</th>
                     <th className="text-right text-xs font-medium text-zinc-500 px-5 py-3.5">نام کامل</th>
                     <th className="text-right text-xs font-medium text-zinc-500 px-5 py-3.5">کد ملی</th>
+                    <th className="text-right text-xs font-medium text-zinc-500 px-5 py-3.5">مقطع</th>
                     <th className="text-right text-xs font-medium text-zinc-500 px-5 py-3.5">پایه</th>
+                    <th className="text-right text-xs font-medium text-zinc-500 px-5 py-3.5">رشته</th>
                     <th className="text-right text-xs font-medium text-zinc-500 px-5 py-3.5">جنسیت</th>
                     <th className="text-right text-xs font-medium text-zinc-500 px-5 py-3.5">شماره تماس</th>
                     <th className="text-right text-xs font-medium text-zinc-500 px-5 py-3.5">عملیات</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredStudents.map((student, i) => (
-                    <tr
-                      key={student._id}
-                      className="border-b border-zinc-200 hover:bg-zinc-50 transition-colors"
-                    >
-                      <td className="px-5 py-4 text-zinc-600 text-xs">{i + 1}</td>
-                      <td className="px-5 py-4 font-medium text-zinc-900">{student.fullName}</td>
-                      <td className="px-5 py-4 text-zinc-600 font-mono text-xs">{student.nationalId}</td>
-                      <td className="px-5 py-4">
-                        {student.grade ? (
-                          <span className="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs border border-indigo-100">
-                            {student.grade}
-                          </span>
-                        ) : <span className="text-zinc-600">—</span>}
-                      </td>
-                      <td className="px-5 py-4">
-                        {student.gender ? (
-                          <span className={`px-2.5 py-1 rounded-lg text-xs border ${student.gender === "male" ? "bg-blue-50 text-blue-700 border-blue-100" : "bg-pink-50 text-pink-700 border-pink-100"}`}>
-                            {student.gender === "male" ? "پسر" : "دختر"}
-                          </span>
-                        ) : <span className="text-zinc-600">—</span>}
-                      </td>
-                      <td className="px-5 py-4 text-zinc-600 font-mono text-xs">{student.studentPhone || "—"}</td>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => openView(student)}
-                            title="مشاهده"
-                            className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 transition-all"
-                          >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => openEdit(student)}
-                            title="ویرایش"
-                            className="p-1.5 rounded-lg text-zinc-500 hover:text-indigo-700 hover:bg-indigo-50 transition-all"
-                          >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => setDeleteConfirm(student._id)}
-                            title="حذف"
-                            className="p-1.5 rounded-lg text-zinc-500 hover:text-red-700 hover:bg-red-50 transition-all"
-                          >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                            </svg>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {filteredStudents.map((student, i) => {
+                    const gradeLabel = grades.find(g => g.value === student.grade)?.label;
+                    return (
+                      <tr
+                        key={student._id}
+                        className="border-b border-zinc-200 hover:bg-zinc-50 transition-colors"
+                      >
+                        <td className="px-5 py-4 text-zinc-600 text-xs">{i + 1}</td>
+                        <td className="px-5 py-4 font-medium text-zinc-900">{student.fullName}</td>
+                        <td className="px-5 py-4 text-zinc-600 font-mono text-xs">{student.nationalId}</td>
+                        <td className="px-5 py-4">
+                          {student.level ? (
+                            <span className="px-2.5 py-1 rounded-lg bg-violet-50 text-violet-700 text-xs border border-violet-100">
+                              {levels.find(l => l.value === student.level)?.label || student.level}
+                            </span>
+                          ) : <span className="text-zinc-400">—</span>}
+                        </td>
+                        <td className="px-3 py-3 sm:px-5 sm:py-4">
+                          {student.grade ? (
+                            <span className="inline-block max-w-30 sm:max-w-none truncate px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg bg-indigo-50 text-indigo-700 text-[10px] sm:text-xs border border-indigo-100 text-center">
+                              {gradeLabel || student.grade}
+                            </span>
+                          ) : (
+                            <span className="text-zinc-500 text-xs sm:text-sm">—</span>
+                          )}
+                        </td>
+
+                        <td className="px-5 py-4 text-zinc-600 text-xs">
+                          {student.field_study || "—"}
+                        </td>
+                        <td className="px-5 py-4">
+                          {student.gender ? (
+                            <span className={`px-2.5 py-1 rounded-lg text-xs border ${student.gender === "male" ? "bg-blue-50 text-blue-700 border-blue-100" : "bg-pink-50 text-pink-700 border-pink-100"}`}>
+                              {student.gender === "male" ? "پسر" : "دختر"}
+                            </span>
+                          ) : <span className="text-zinc-600">—</span>}
+                        </td>
+                        <td className="px-5 py-4 text-zinc-600 font-mono text-xs">{student.studentPhone || "—"}</td>
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => openView(student)}
+                              title="مشاهده"
+                              className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 transition-all"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => openEdit(student)}
+                              title="ویرایش"
+                              className="p-1.5 rounded-lg text-zinc-500 hover:text-indigo-700 hover:bg-indigo-50 transition-all"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => setDeleteConfirm(student._id)}
+                              title="حذف"
+                              className="p-1.5 rounded-lg text-zinc-500 hover:text-red-700 hover:bg-red-50 transition-all"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  }
+                  )}
                 </tbody>
               </table>
             </div>
@@ -438,236 +569,270 @@ export default function AdminPage() {
       {/* Add/Edit Modal */}
       <AnimatePresence mode="wait">
         {(modalMode === "add" || modalMode === "edit") && (
-        <motion.div
-          key="add-edit-modal"
-          variants={backdropMotion}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-          className="fixed inset-0 z-40 bg-zinc-900/40 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={closeModal}
-        >
           <motion.div
-            variants={modalMotion as any}
-            className="bg-white border border-zinc-200 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl shadow-zinc-200/70"
-            onClick={(e) => e.stopPropagation()}
+            key="add-edit-modal"
+            variants={backdropMotion}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="fixed inset-0 z-40 bg-zinc-900/40 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={closeModal}
           >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200">
-              <h2 className="font-semibold text-zinc-900">
-                {modalMode === "add" ? "افزودن دانش‌آموز جدید" : "ویرایش اطلاعات"}
-              </h2>
-              <button title="close-modal" onClick={closeModal} className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition-all">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="p-6 space-y-5">
-              {/* Row 1 */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className={labelCls}>نام کامل <span className="text-red-400">*</span></label>
-                  <input className={inputCls} value={form.fullName} onChange={e => setForm(f => ({...f, fullName: e.target.value}))} placeholder="علی محمدی" />
-                </div>
-                <div>
-                  <label className={labelCls}>کد ملی <span className="text-red-400">*</span></label>
-                  <input className={inputCls} value={form.nationalId} type="number" max={10} maxLength={10} onChange={e => setForm(f => ({...f, nationalId: e.target.value}))} placeholder="0012345678" dir="ltr" />
-                </div>
+            <motion.div
+              variants={modalMotion as any}
+              className="bg-white border border-zinc-200 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl shadow-zinc-200/70"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200">
+                <h2 className="font-semibold text-zinc-900">
+                  {modalMode === "add" ? "افزودن دانش‌آموز جدید" : "ویرایش اطلاعات"}
+                </h2>
+                <button title="close-modal" onClick={closeModal} className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition-all">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              {/* Row 2 */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className={labelCls}>پایه</label>
-                  <select title="choose-grade" className={inputCls + " cursor-pointer"} value={form.grade} onChange={e => setForm(f => ({...f, grade: e.target.value}))}>
-                    <option value="">انتخاب کنید</option>
-                    {GRADES.map(g => <option key={g} value={g}>{g}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className={labelCls}>جنسیت</label>
-                  <select title="choose-gender" className={inputCls + " cursor-pointer"} value={form.gender ?? ""} onChange={e => setForm(f => ({...f, gender: e.target.value as "male" | "female" | undefined || undefined}))}>
-                    <option value="">انتخاب کنید</option>
-                    <option value="male">پسر</option>
-                    <option value="female">دختر</option>
-                  </select>
-                </div>
-              </div>
-              {/* Row 3 */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className={labelCls}>مدرسه قبلی</label>
-                  <input className={inputCls} value={form.lastSchool} onChange={e => setForm(f => ({...f, lastSchool: e.target.value}))} placeholder="مدرسه شهید بهشتی" />
-                </div>
-                <div>
-                  <label className={labelCls}>شماره شاد دانش‌آموز</label>
-                  <input className={inputCls} value={form.studentPhone} max={11} type="number" onChange={e => setForm(f => ({...f, studentPhone: e.target.value}))} placeholder="09xxxxxxxxx" dir="ltr" />
-                </div>
-              </div>
-              {/* Row 4 */}
-              <div>
-                <label className={labelCls}>آدرس منزل</label>
-                <input className={inputCls} value={form.homeAddress} onChange={e => setForm(f => ({...f, homeAddress: e.target.value}))} placeholder="تهران، خیابان..." />
-              </div>
-              {/* Parents */}
-              <div className="border-t border-zinc-200 pt-4">
-                <p className="text-xs text-zinc-500 mb-3 font-medium">اطلاعات والدین</p>
+              <div className="p-6 space-y-5">
+                {/* Row 1 */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className={labelCls}>محل کار مادر</label>
-                    <input className={inputCls} value={form.motherWork} onChange={e => setForm(f => ({...f, motherWork: e.target.value}))} placeholder="خانه‌دار / معلم ..." />
+                    <label className={labelCls}>نام کامل <span className="text-red-400">*</span></label>
+                    <input className={inputCls} value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} placeholder="علی محمدی" />
                   </div>
                   <div>
-                    <label className={labelCls}>شماره مادر</label>
-                    <input className={inputCls} value={form.motherPhone} onChange={e => setForm(f => ({...f, motherPhone: e.target.value}))} placeholder="09xxxxxxxxx" dir="ltr" />
+                    <label className={labelCls}>کد ملی <span className="text-red-400">*</span></label>
+                    <input className={inputCls} value={form.nationalId} type="number" max={10} maxLength={10} onChange={e => setForm(f => ({ ...f, nationalId: e.target.value }))} placeholder="0012345678" dir="ltr" />
+                  </div>
+                </div>
+                {/* Row 2 */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelCls}>پایه</label>
+                    <select title="choose-grade" className={inputCls + " cursor-pointer"} value={form.grade} onChange={e => setForm(f => ({ ...f, grade: e.target.value }))}>
+                      <option value="">انتخاب کنید</option>
+                      {grades.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+                    </select>
                   </div>
                   <div>
-                    <label className={labelCls}>محل کار پدر</label>
-                    <input className={inputCls} value={form.fatherWork} onChange={e => setForm(f => ({...f, fatherWork: e.target.value}))} placeholder="مهندس / کارمند ..." />
+                    <label className={labelCls}>جنسیت</label>
+                    <select title="choose-gender" className={inputCls + " cursor-pointer"} value={form.gender ?? ""} onChange={e => setForm(f => ({ ...f, gender: e.target.value as "male" | "female"  }))}>
+                      <option value="">انتخاب کنید</option>
+                      <option value="male">پسر</option>
+                      <option value="female">دختر</option>
+                    </select>
+                  </div>
+                </div>
+                {/* Row 2.5 — مقطع و رشته */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelCls}>مقطع تحصیلی</label>
+                    <select title="choose-level" className={inputCls + " cursor-pointer"}
+                      value={form.level ?? ""}
+                      onChange={e => setForm(f => ({ ...f, level: e.target.value, grade: "" }))}>
+                      <option value="">انتخاب کنید</option>
+                      {levels.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
+                    </select>
+                  </div>
+                  {["10", "11", "12"].includes(form.grade ?? "") && (
+                    <div>
+                      <label className={labelCls}>رشته تحصیلی</label>
+                      <input className={inputCls} value={form.field_study ?? ""}
+                        onChange={e => setForm(f => ({ ...f, field_study: e.target.value }))}
+                        placeholder="ریاضی / تجربی ..." />
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className={labelCls}>پایه</label>
+                  <select title="choose-grade" className={inputCls + " cursor-pointer"}
+                    value={form.grade}
+                    onChange={e => setForm(f => ({ ...f, grade: e.target.value }))}
+                    disabled={!form.level}>
+                    <option value="">انتخاب کنید</option>
+                    {grades.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+                  </select>
+                </div>
+                {/* Row 3 */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelCls}>مدرسه قبلی</label>
+                    <input className={inputCls} value={form.lastSchool} onChange={e => setForm(f => ({ ...f, lastSchool: e.target.value }))} placeholder="مدرسه شهید بهشتی" />
                   </div>
                   <div>
-                    <label className={labelCls}>شماره پدر</label>
-                    <input className={inputCls} value={form.fatherPhone} onChange={e => setForm(f => ({...f, fatherPhone: e.target.value}))} placeholder="09xxxxxxxxx" dir="ltr" />
+                    <label className={labelCls}>شماره شاد دانش‌آموز</label>
+                    <input className={inputCls} value={form.studentPhone} max={11} type="number" onChange={e => setForm(f => ({ ...f, studentPhone: e.target.value }))} placeholder="09xxxxxxxxx" dir="ltr" />
+                  </div>
+                </div>
+                {/* Row 4 */}
+                <div>
+                  <label className={labelCls}>آدرس منزل</label>
+                  <input className={inputCls} value={form.homeAddress} onChange={e => setForm(f => ({ ...f, homeAddress: e.target.value }))} placeholder="تهران، خیابان..." />
+                </div>
+                {/* Parents */}
+                <div className="border-t border-zinc-200 pt-4">
+                  <p className="text-xs text-zinc-500 mb-3 font-medium">اطلاعات والدین</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className={labelCls}>محل کار مادر</label>
+                      <input className={inputCls} value={form.motherWork} onChange={e => setForm(f => ({ ...f, motherWork: e.target.value }))} placeholder="خانه‌دار / معلم ..." />
+                    </div>
+                    <div>
+                      <label className={labelCls}>شماره مادر</label>
+                      <input className={inputCls} value={form.motherPhone} onChange={e => setForm(f => ({ ...f, motherPhone: e.target.value }))} placeholder="09xxxxxxxxx" dir="ltr" />
+                    </div>
+                    <div>
+                      <label className={labelCls}>محل کار پدر</label>
+                      <input className={inputCls} value={form.fatherWork} onChange={e => setForm(f => ({ ...f, fatherWork: e.target.value }))} placeholder="مهندس / کارمند ..." />
+                    </div>
+                    <div>
+                      <label className={labelCls}>شماره پدر</label>
+                      <input className={inputCls} value={form.fatherPhone} onChange={e => setForm(f => ({ ...f, fatherPhone: e.target.value }))} placeholder="09xxxxxxxxx" dir="ltr" />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            <div className="px-6 py-4 border-t border-zinc-200 flex gap-3 justify-end">
-              <button onClick={closeModal} className="px-5 py-2.5 rounded-xl border border-zinc-200 text-sm text-zinc-600 hover:text-zinc-900 hover:border-zinc-300 transition-all">
-                انصراف
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={actionLoading}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 disabled:opacity-60 text-white text-sm font-medium transition-all active:scale-95"
-              >
-                {actionLoading && (
-                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                )}
-                {modalMode === "add" ? "ثبت دانش‌آموز" : "ذخیره تغییرات"}
-              </button>
-            </div>
+              <div className="px-6 py-4 border-t border-zinc-200 flex gap-3 justify-end">
+                <button onClick={closeModal} className="px-5 py-2.5 rounded-xl border border-zinc-200 text-sm text-zinc-600 hover:text-zinc-900 hover:border-zinc-300 transition-all">
+                  انصراف
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={actionLoading}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 disabled:opacity-60 text-white text-sm font-medium transition-all active:scale-95"
+                >
+                  {actionLoading && (
+                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  )}
+                  {modalMode === "add" ? "ثبت دانش‌آموز" : "ذخیره تغییرات"}
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
-        </motion.div>
         )}
       </AnimatePresence>
 
       {/* View Modal */}
       <AnimatePresence mode="wait">
         {modalMode === "view" && selectedStudent && (
-        <motion.div
-          key="view-modal"
-          variants={backdropMotion}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-          className="fixed inset-0 z-40 bg-zinc-900/40 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={closeModal}
-        >
           <motion.div
-            variants={modalMotion as any}
-            className="bg-white border border-zinc-200 rounded-2xl w-full max-w-lg shadow-xl shadow-zinc-200/70"
-            onClick={e => e.stopPropagation()}
+            key="view-modal"
+            variants={backdropMotion}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="fixed inset-0 z-40 bg-zinc-900/40 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={closeModal}
           >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200">
-              <div className="flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-medium ${selectedStudent.gender === "female" ? "bg-pink-50 text-pink-700 border border-pink-100" : "bg-blue-50 text-blue-700 border border-blue-100"}`}>
-                  {selectedStudent.fullName.charAt(0)}
+            <motion.div
+              variants={modalMotion as any}
+              className="bg-white border border-zinc-200 rounded-2xl w-full max-w-lg shadow-xl shadow-zinc-200/70"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200">
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-medium ${selectedStudent.gender === "female" ? "bg-pink-50 text-pink-700 border border-pink-100" : "bg-blue-50 text-blue-700 border border-blue-100"}`}>
+                    {selectedStudent.fullName.charAt(0)}
+                  </div>
+                  <div>
+                    <h2 className="font-semibold text-zinc-900">{selectedStudent.fullName}</h2>
+                    <p className="text-xs text-zinc-500">{selectedStudent.nationalId}</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="font-semibold text-zinc-900">{selectedStudent.fullName}</h2>
-                  <p className="text-xs text-zinc-500">{selectedStudent.nationalId}</p>
-                </div>
+                <button title="close-modal" onClick={closeModal} className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition-all">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              <button title="close-modal" onClick={closeModal} className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition-all">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="p-6 space-y-1">
-              {[
-                ["پایه", selectedStudent.grade],
-                ["جنسیت", selectedStudent.gender === "male" ? "پسر" : selectedStudent.gender === "female" ? "دختر" : undefined],
-                ["مدرسه قبلی", selectedStudent.lastSchool],
-                ["شماره شاد", selectedStudent.studentPhone],
-                ["آدرس", selectedStudent.homeAddress],
-                ["محل کار مادر", selectedStudent.motherWork],
-                ["شماره مادر", selectedStudent.motherPhone],
-                ["محل کار پدر", selectedStudent.fatherWork],
-                ["شماره پدر", selectedStudent.fatherPhone],
-              ].map(([k, v]) => (
-                <div key={k} className="flex items-center justify-between py-2.5 border-b border-zinc-200 last:border-0">
-                  <span className="text-xs text-zinc-500">{k}</span>
-                  <span className="text-sm text-zinc-800">{v || "—"}</span>
-                </div>
-              ))}
-            </div>
-            <div className="px-6 py-4 border-t border-zinc-200 flex gap-3 justify-end">
-              <button
-                onClick={() => { closeModal(); openEdit(selectedStudent); }}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl border border-indigo-100 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-sm transition-all"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
-                </svg>
-                ویرایش
-              </button>
-            </div>
+              <div className="p-6 space-y-1">
+                {[
+                  ["پایه", selectedStudent.grade],
+                  ["جنسیت", selectedStudent.gender === "male" ? "پسر" : selectedStudent.gender === "female" ? "دختر" : undefined],
+                  ["مدرسه قبلی", selectedStudent.lastSchool],
+                  ["شماره شاد", selectedStudent.studentPhone],
+                  ["آدرس", selectedStudent.homeAddress],
+                  ["محل کار مادر", selectedStudent.motherWork],
+                  ["شماره مادر", selectedStudent.motherPhone],
+                  ["محل کار پدر", selectedStudent.fatherWork],
+                  ["شماره پدر", selectedStudent.fatherPhone],
+                  ["مقطع", levels.find(l => l.value === selectedStudent.level)?.label],
+                  ["پایه", selectedStudent.grade],
+["رشته تحصیلی", selectedStudent.field_study],
+                ].map(([k, v]) => (
+                  <div key={k} className="flex items-center justify-between py-2.5 border-b border-zinc-200 last:border-0">
+                    <span className="text-xs text-zinc-500">{k}</span>
+                    <span className="text-sm text-zinc-800">{v || "—"}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="px-6 py-4 border-t border-zinc-200 flex gap-3 justify-end">
+                <button
+                  onClick={() => { closeModal(); openEdit(selectedStudent); }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl border border-indigo-100 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-sm transition-all"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                  </svg>
+                  ویرایش
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
-        </motion.div>
         )}
       </AnimatePresence>
 
       {/* Delete Confirm */}
       <AnimatePresence mode="wait">
         {deleteConfirm && (
-        <motion.div
-          key="delete-confirm-modal"
-          variants={backdropMotion}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-          className="fixed inset-0 z-50 bg-zinc-900/50 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setDeleteConfirm(null)}
-        >
           <motion.div
-            variants={modalMotion as any}
-            className="bg-white border border-zinc-200 rounded-2xl w-full max-w-sm p-6 shadow-xl shadow-zinc-200/70"
-            onClick={e => e.stopPropagation()}
+            key="delete-confirm-modal"
+            variants={backdropMotion}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="fixed inset-0 z-50 bg-zinc-900/50 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setDeleteConfirm(null)}
           >
-            <div className="w-12 h-12 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center mx-auto mb-4">
-              <svg className="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-              </svg>
-            </div>
-            <h3 className="text-center font-semibold text-zinc-900 mb-2">حذف دانش‌آموز</h3>
-            <p className="text-center text-sm text-zinc-600 mb-6">آیا مطمئن هستید؟ این عمل قابل بازگشت نیست.</p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setDeleteConfirm(null)}
-                className="flex-1 py-2.5 rounded-xl border border-zinc-200 text-sm text-zinc-600 hover:text-zinc-900 hover:border-zinc-300 transition-all"
-              >
-                انصراف
-              </button>
-              <button
-                onClick={() => handleDelete(deleteConfirm)}
-                disabled={actionLoading}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 disabled:opacity-60 text-white text-sm font-medium transition-all active:scale-95"
-              >
-                {actionLoading && (
-                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                )}
-                بله، حذف کن
-              </button>
-            </div>
+            <motion.div
+              variants={modalMotion as any}
+              className="bg-white border border-zinc-200 rounded-2xl w-full max-w-sm p-6 shadow-xl shadow-zinc-200/70"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="w-12 h-12 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center mx-auto mb-4">
+                <svg className="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+              </div>
+              <h3 className="text-center font-semibold text-zinc-900 mb-2">حذف دانش‌آموز</h3>
+              <p className="text-center text-sm text-zinc-600 mb-6">آیا مطمئن هستید؟ این عمل قابل بازگشت نیست.</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteConfirm(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-zinc-200 text-sm text-zinc-600 hover:text-zinc-900 hover:border-zinc-300 transition-all"
+                >
+                  انصراف
+                </button>
+                <button
+                  onClick={() => handleDelete(deleteConfirm)}
+                  disabled={actionLoading}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 disabled:opacity-60 text-white text-sm font-medium transition-all active:scale-95"
+                >
+                  {actionLoading && (
+                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  )}
+                  بله، حذف کن
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
-        </motion.div>
         )}
       </AnimatePresence>
     </div>
