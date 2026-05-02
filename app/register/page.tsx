@@ -8,6 +8,9 @@ import Image from "next/image"
 
 
 const gradeOptions: Record<string, { value: string; label: string }[]> = {
+  preschool: [
+    { value: "pre", label: "پیش‌دبستانی" },
+  ],
   primary: [
     { value: "1", label: "پایه اول" },
     { value: "2", label: "پایه دوم" },
@@ -54,8 +57,6 @@ export default function RegisterPage() {
     motherPhone: "",
     fatherWork: "",
     fatherPhone: "",
-
-    // فیلدهای ویژه پایه دهم
     fatherName: "",
     motherName: "",
     birthday: "",
@@ -75,7 +76,14 @@ export default function RegisterPage() {
       ...prev,
       [name]: value,
     }));
-
+if (name === "level" && value === "preschool") {
+  setFormData(prev => ({
+    ...prev,
+    level: value,
+    grade: "pre",
+  }))
+  return
+}
     // پاک کردن خطای فیلد هنگام تغییر مقدار
     if (fieldErrors[name]) {
       setFieldErrors(prev => ({
@@ -108,7 +116,7 @@ export default function RegisterPage() {
     if (!formData.grade.trim())
       errors.grade = "پایه تحصیلی الزامی است"
 
-    if (!formData.lastSchool.trim())
+    if (!formData.lastSchool.trim() && formData.level !== "preschool")
       errors.lastSchool = "مدرسه سال قبل الزامی است"
 
     if (!formData.homeAddress.trim())
@@ -430,6 +438,7 @@ export default function RegisterPage() {
                 onChange={handleChange}
               >
                 <option value="">انتخاب مقطع</option>
+                <option value="preschool">پیش‌ دبستانی</option>
                 <option value="primary">دبستان</option>
                 <option value="middle">متوسطه اول</option>
                 <option value="high">متوسطه دوم</option>
@@ -438,21 +447,23 @@ export default function RegisterPage() {
               <FieldError field="level" />
             </div>
             <div>
-              <select
-                title="grade"
-                name="grade"
-                className={getInputStyle("grade")}
-                value={formData.grade}
-                onChange={handleChange}
-                disabled={!formData.level}
-              >
-                <option value="">انتخاب پایه</option>
-                {gradeOptions[formData.level]?.map(g => (
-                  <option key={g.value} value={g.value}>
-                    {g.label}
-                  </option>
-                ))}
-              </select>
+            {formData.level !== "preschool" && (
+  <select
+    title="grade"
+    name="grade"
+    className={getInputStyle("grade")}
+    value={formData.grade}
+    onChange={handleChange}
+    disabled={!formData.level}
+  >
+    <option value="">انتخاب پایه</option>
+    {gradeOptions[formData.level]?.map(g => (
+      <option key={g.value} value={g.value}>
+        {g.label}
+      </option>
+    ))}
+  </select>
+)}
               <FieldError field="grade" />
             </div>
             {["10", "11", "12"].includes(formData.grade) && (
@@ -510,10 +521,13 @@ export default function RegisterPage() {
               </>
             )}
 
+        {
+          formData.level !== "preschool" && 
             <div>
               <input name="lastSchool" placeholder="مدرسه سال قبل" className={getInputStyle("lastSchool")} value={formData.lastSchool} onChange={handleChange} />
               <FieldError field="lastSchool" />
             </div>
+        }
 
             <div className="md:col-span-2">
               <textarea

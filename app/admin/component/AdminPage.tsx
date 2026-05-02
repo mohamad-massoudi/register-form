@@ -56,6 +56,7 @@ const GUIDANCE_OPTIONS = ["تجربی", "ریاضی", "انسانی", "فنی و
 
 
 const levels = [
+  { label: "پیش‌ دبستانی", value: "preschool" },
   { label: "دبستان", value: "primary" },
   { label: "متوسطه اول", value: "middle" },
   { label: "متوسطه دوم", value: "high" },
@@ -64,6 +65,7 @@ const levels = [
 
 // grades رو جایگزین کن با مقادیر عددی که فرم ذخیره می‌کنه
 const grades = [
+    { label: "پیش‌دبستانی", value: "pre" },
   { label: "پایه اول", value: "1" },
   { label: "پایه دوم", value: "2" },
   { label: "پایه سوم", value: "3" },
@@ -273,14 +275,13 @@ export default function AdminPage() {
     exit: { opacity: 0, y: -16, scale: 0.96 },
   };
 
-
-  const levelMap: Record<string, string> = {
-    primary: "دبستان",
-    middle: "متوسطه اول",
-    high: "متوسطه دوم",
-    technical: "هنرستان",
-  }
-
+const levelMap: Record<string, string> = {
+  preschool: "پیش‌دبستانی",
+  primary: "دبستان",
+  middle: "متوسطه اول",
+  high: "متوسطه دوم",
+  technical: "هنرستان",
+}
   const exportToExcel = () => {
 const data = filteredStudents.map((s, i) => ({
   "#": i + 1,
@@ -288,7 +289,10 @@ const data = filteredStudents.map((s, i) => ({
   "کد ملی": s.nationalId,
   "جنسیت": s.gender === "male" ? "پسر" : s.gender === "female" ? "دختر" : "-",
   "مقطع": levelMap[s.level] || "-",
-  "پایه": grades.find(g => g.value === s.grade)?.label || s.grade || "-",
+  "پایه":
+    grades.find(g => g.value === s.grade)?.label ||
+    (s.grade === "pre" ? "پیش‌دبستانی" : s.grade) ||
+    "-",
   "رشته": s.field_study || "-",
   "شماره شاد": s.studentPhone || "-",
   "مدرسه قبلی": s.lastSchool || "-",
@@ -527,7 +531,9 @@ const data = filteredStudents.map((s, i) => ({
                 </thead>
                 <tbody>
                   {filteredStudents.map((student, i) => {
-                    const gradeLabel = grades.find(g => g.value === student.grade)?.label;
+                    const gradeLabel =
+  grades.find(g => g.value === student.grade)?.label ||
+  (student.grade === "pre" ? "پیش‌دبستانی" : student.grade);
                     return (
                       <tr
                         key={student._id}
@@ -693,7 +699,16 @@ const data = filteredStudents.map((s, i) => ({
                     <label className={labelCls}>مقطع تحصیلی</label>
                     <select title="choose-level" className={inputCls + " cursor-pointer"}
                       value={form.level ?? ""}
-                      onChange={e => setForm(f => ({ ...f, level: e.target.value, grade: "" }))}>
+                      onChange={e => {
+  const value = e.target.value
+  setForm(f => ({
+    ...f,
+    level: value,
+    grade: value === "preschool" ? "pre" : ""
+  }))
+}}
+                      
+                      >
                       <option value="">انتخاب کنید</option>
                       {levels.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
                     </select>
@@ -708,16 +723,21 @@ const data = filteredStudents.map((s, i) => ({
                   )}
                 </div>
 
-                <div>
-                  <label className={labelCls}>پایه</label>
-                  <select title="choose-grade" className={inputCls + " cursor-pointer"}
-                    value={form.grade}
-                    onChange={e => setForm(f => ({ ...f, grade: e.target.value }))}
-                    disabled={!form.level}>
-                    <option value="">انتخاب کنید</option>
-                    {grades.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
-                  </select>
-                </div>
+               {form.level !== "preschool" && (
+  <div>
+    <label className={labelCls}>پایه</label>
+    <select
+      title="choose-grade"
+      className={inputCls + " cursor-pointer"}
+      value={form.grade}
+      onChange={e => setForm(f => ({ ...f, grade: e.target.value }))}
+      disabled={!form.level}
+    >
+      <option value="">انتخاب کنید</option>
+      {grades.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+    </select>
+  </div>
+)}
                 {/* Row 3 */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>

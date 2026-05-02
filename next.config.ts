@@ -4,8 +4,8 @@ const nextConfig: NextConfig = {
   env:{
     MONGODB_URI:"mongodb://admin:nnbxWF8ezD9SDD1svlKe@remote-pishgaman.runflare.com:32202/admin",
     // MONGODB_URI:"mongodb://localhost:27017",
-    CLIENT_URL:"https://skywalker.runflare.run",
-    NEXTAUTH_URL:"https://skywalker.runflare.run",
+    CLIENT_URL:"https://oilschools.ir",
+    NEXTAUTH_URL:"https://oilschools.ir",
     // CLIENT_URL:"http://localhost:3001",
     // NEXTAUTH_URL:"https://localhost:3001",
     NEXTAUTH_SECRET : "F6LIA3uJ4KtpSK7cfQmrVDy8880OrOYaZAIHa66/xyk=",
