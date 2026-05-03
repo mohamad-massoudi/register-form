@@ -51,6 +51,7 @@ export default function RegisterPage() {
     field_study: "",
     lastSchool: "",
     homeAddress: "",
+
     studentPhone: "",
     gender: "",
     motherWork: "",
@@ -61,6 +62,7 @@ export default function RegisterPage() {
     motherName: "",
     birthday: "",
     grade_point: "",
+     has_academic_guidance: "",  // اضافه کن
     academic_guidance_a: "",
     academic_guidance_b: "",
   })
@@ -81,6 +83,15 @@ if (name === "level" && value === "preschool") {
     ...prev,
     level: value,
     grade: "pre",
+  }))
+  return
+}
+if (name === "has_academic_guidance" && value === "no") {
+  setFormData(prev => ({
+    ...prev,
+    has_academic_guidance: "no",
+    academic_guidance_a: "",
+    academic_guidance_b: "",
   }))
   return
 }
@@ -136,21 +147,26 @@ if (name === "level" && value === "preschool") {
     }
 
 
-    if (formData.grade === "10") {
-      if (!formData.grade_point.trim()) {
-        errors.grade_point = "معدل پایه نهم الزامی است"
-      } else if (isNaN(Number(formData.grade_point))) {
-        errors.grade_point = "معدل باید عدد باشد"
-      }
+   if (formData.grade === "10") {
+  if (!formData.has_academic_guidance) {
+    errors.has_academic_guidance = "لطفاً مشخص کنید هدایت تحصیلی دارید یا نه"
+  }
 
-      if (!formData.academic_guidance_a.trim()) {
-        errors.academic_guidance_a = "هدایت تحصیلی اولویت الف الزامی است"
-      }
+  if (!formData.grade_point.trim()) {
+    errors.grade_point = "معدل پایه نهم الزامی است"
+  } else if (isNaN(Number(formData.grade_point))) {
+    errors.grade_point = "معدل باید عدد باشد"
+  }
 
-      if (!formData.academic_guidance_b.trim()) {
-        errors.academic_guidance_b = "هدایت تحصیلی اولویت ب الزامی است"
-      }
+  if (formData.has_academic_guidance === "yes") {
+    if (!formData.academic_guidance_a.trim()) {
+      errors.academic_guidance_a = "هدایت تحصیلی اولویت الف الزامی است"
     }
+    if (!formData.academic_guidance_b.trim()) {
+      errors.academic_guidance_b = "هدایت تحصیلی اولویت ب الزامی است"
+    }
+  }
+}
 
     return errors
   }
@@ -231,6 +247,7 @@ if (name === "level" && value === "preschool") {
         level: "",
         grade: "",
         field_study: "",
+        has_academic_guidance: "",
         lastSchool: "",
         homeAddress: "",
         studentPhone: "",
@@ -359,6 +376,7 @@ if (name === "level" && value === "preschool") {
                 homeAddress: "",
                 studentPhone: "",
                 gender: "",
+                  has_academic_guidance: "",
                 motherWork: "",
                 motherPhone: "",
                 fatherWork: "",
@@ -478,48 +496,67 @@ if (name === "level" && value === "preschool") {
                 <FieldError field="field_study" />
               </div>
             )}
-            {formData.grade === "10" && (
-              <>
-                <div>
-                  <input
-                    name="grade_point"
-                    placeholder="معدل پایه نهم"
-                    className={getInputStyle("grade_point")}
-                    value={formData.grade_point}
-                    onChange={handleChange}
-                  />
-                  <FieldError field="grade_point" />
-                </div>
+         {formData.grade === "10" && (
+  <>
+    <div>
+      <input
+        name="grade_point"
+        placeholder="معدل پایه نهم"
+        className={getInputStyle("grade_point")}
+        value={formData.grade_point}
+        onChange={handleChange}
+      />
+      <FieldError field="grade_point" />
+    </div>
 
-                <div>
-                  <select
-                    title="academic_guidance_a"
-                    name="academic_guidance_a"
-                    className={getInputStyle("academic_guidance_a")}
-                    value={formData.academic_guidance_a}
-                    onChange={handleChange}
-                  >
-                    <option value="">اولویت الف (انتخاب کنید)</option>
-                    {GUIDANCE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                  </select>
-                  <FieldError field="academic_guidance_a" />
-                </div>
+    <div>
+      <select
+        title="has_academic_guidance"
+        name="has_academic_guidance"
+        className={getInputStyle("has_academic_guidance")}
+        value={formData.has_academic_guidance}
+        onChange={handleChange}
+      >
+        <option value="">هدایت تحصیلی دارید؟</option>
+        <option value="yes">دارم</option>
+        <option value="no">ندارم</option>
+      </select>
+      <FieldError field="has_academic_guidance" />
+    </div>
 
-                <div>
-                  <select
-                    title="academic_guidance_b"
-                    name="academic_guidance_b"
-                    className={getInputStyle("academic_guidance_b")}
-                    value={formData.academic_guidance_b}
-                    onChange={handleChange}
-                  >
-                    <option value="">اولویت ب (انتخاب کنید)</option>
-                    {GUIDANCE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                  </select>
-                  <FieldError field="academic_guidance_b" />
-                </div>
-              </>
-            )}
+    {formData.has_academic_guidance === "yes" && (
+      <>
+        <div>
+          <select
+            title="academic_guidance_a"
+            name="academic_guidance_a"
+            className={getInputStyle("academic_guidance_a")}
+            value={formData.academic_guidance_a}
+            onChange={handleChange}
+          >
+            <option value="">اولویت الف (انتخاب کنید)</option>
+            {GUIDANCE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+          </select>
+          <FieldError field="academic_guidance_a" />
+        </div>
+
+        <div>
+          <select
+            title="academic_guidance_b"
+            name="academic_guidance_b"
+            className={getInputStyle("academic_guidance_b")}
+            value={formData.academic_guidance_b}
+            onChange={handleChange}
+          >
+            <option value="">اولویت ب (انتخاب کنید)</option>
+            {GUIDANCE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+          </select>
+          <FieldError field="academic_guidance_b" />
+        </div>
+      </>
+    )}
+  </>
+)}
 
         {
           formData.level !== "preschool" && 

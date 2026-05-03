@@ -13,7 +13,7 @@ export interface IStudent extends Document {
 
   birthday?: string;
   grade_point?: string;
-
+  has_academic_guidance?: "yes" | "no";
   academic_guidance_a?: string;
   academic_guidance_b?: string;
 
@@ -48,7 +48,7 @@ const studentSchema = new Schema<IStudent>(
     field_study: { type: String },
     birthday: { type: String },
     grade_point: { type: String },
-
+    has_academic_guidance:{type: String, enum: ["yes", "no"], default: "no"},
     academic_guidance_a: {
       type: String,
       enum: ["تجربی", "ریاضی", "انسانی", "فنی", ""],
