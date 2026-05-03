@@ -16,12 +16,14 @@ export async function GET(req: NextRequest) {
     const grade = searchParams.get("grade");
     const gender = searchParams.get("gender");
     const level = searchParams.get("level");
+    const registerCode = searchParams.get("code")
 
     const filter: any = {};
 
     if (grade) filter.grade = grade;
     if (gender) filter.gender = gender;
     if (level) filter.level = level;
+    if (registerCode) filter.registerCode = registerCode;
 
     const students = await Student.find(filter).sort({ createdAt: -1 });
 

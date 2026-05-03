@@ -239,7 +239,7 @@ export default function AdminPage() {
 
   const filteredStudents = students.filter((s) =>
     search.trim()
-      ? s.fullName.includes(search) || s.nationalId.includes(search)
+      ? s.fullName.includes(search) || s.nationalId.includes(search) || s.registerCode?.includes(search)
       : true
   );
 
@@ -419,7 +419,7 @@ const data = filteredStudents.map((s, i) => ({
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="نام یا کد ملی..."
+                placeholder="نام یا کد ملی یا کد پیگیری..."
                 className={inputCls + " pr-9"}
               />
             </div>
