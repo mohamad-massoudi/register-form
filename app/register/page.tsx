@@ -62,7 +62,7 @@ export default function RegisterPage() {
     motherName: "",
     birthday: "",
     grade_point: "",
-     has_academic_guidance: "",  // اضافه کن
+    has_academic_guidance: "no",  // اضافه کن
     academic_guidance_a: "",
     academic_guidance_b: "",
   })
@@ -759,7 +759,7 @@ if (name === "has_academic_guidance" && value === "no") {
         )}
 
          {/* Note */}
-            <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700 !w-full">
+            <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700 w-full!">
               <strong>نکته:</strong> تکمیل این فرم به معنای ثبت‌نام قطعی نمی‌باشد و پس از بررسی اطلاعات با شما تماس گرفته خواهد شد.
             </div>
 
