@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
         { status: 409 }
       );
     }
-
+    body.has_academic_guidance = body.has_academic_guidance || "no";
     const student = await Student.create(body);
 
     return NextResponse.json(
